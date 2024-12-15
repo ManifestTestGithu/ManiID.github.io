@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ManiID(Beta)</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background-color: #f4f4f9;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 300px;
+        }
+
+        input, button {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .output {
+            margin-top: 20px;
+            width: 100%;
+            max-width: 500px;
+        }
+
+        pre {
+            background: #272822;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 5px;
+            overflow: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>ManiID(Beta)</h1>
+    <form id="generator-form">
+        <input type="number" id="appid" placeholder="Enter AppID" required>
+        <button type="submit">Generate</button>
+    </form>
+
+    <div class="output" id="output"></div>
+
+    <script>
+        async function downloadZip(fileName, zipBlob) {
+            const url = URL.createObjectURL(zipBlob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        document.getElementById('generator-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const appId = document.getElementById('appid').value;
+
+            if (!appId) {
+                alert('Please enter the AppID.');
+                return;
+            }
+
+            const luaContent = `application = {
+    appId = ${appId}
+}`;
+
+            const manifestContent = `{
+    "appid": ${appId},
+    "version": "1.0"
+}`;
+
+            const readmeContent = `SteamTools Generated Files\n\nAppID: ${appId}\nVersion: 1.0\nGenerated for SteamTools compatibility.`;
+
+            const steamAppIdContent = `${appId}\n`; // Contenido válido para steam_appid.txt
+
+            const zip = new JSZip();
+            zip.file("steam_appid.txt", steamAppIdContent);
+            zip.file(`${appId}.lua`, luaContent);
+            zip.file(`${appId}.manifest`, manifestContent);
+            zip.file("readme.txt", readmeContent);
+
+            const zipBlob = await zip.generateAsync({ type: 'blob' });
+
+            downloadZip(`${appId}_files.zip`, zipBlob);
+
+            document.getElementById('output').innerHTML = `
+                <h2>Generated Files</h2>
+                <h3>Lua File</h3>
+                <pre>${luaContent}</pre>
+                <h3>Manifest File</h3>
+                <pre>${manifestContent}</pre>
+                <h3>Steam AppID File</h3>
+                <pre>${steamAppIdContent}</pre>
+                <h3>Readme</h3>
+                <pre>${readmeContent}</pre>
+            `;
+        });
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+</body>
+</html>
